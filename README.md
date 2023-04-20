@@ -1,0 +1,1 @@
+# ALT Linux Package Comparison CLI
