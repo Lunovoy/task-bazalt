@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -16,6 +17,11 @@ type BranchBinaryPackages struct {
 		Arch any `json:"arch"`
 	} `json:"request_args"`
 	Length   int       `json:"length"`
+	Packages []Package `json:"packages"`
+}
+
+type ComparisonVersions struct {
+	Arch     string    `json:"arch"`
 	Packages []Package `json:"packages"`
 }
 
@@ -38,6 +44,9 @@ func getPackages(branch, arch string) ([]Package, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Set("User-Agent", "AltLinux Package Comparison CLI")
+
 	client := &http.Client{}
 
 	respChan := make(chan *http.Response)
@@ -61,8 +70,8 @@ func getPackages(branch, arch string) ([]Package, error) {
 		if err != nil {
 			return nil, err
 		}
-		// fmt.Println(string(body))
-		var branchBinaryPackages BranchBinaryPackages
+
+		branchBinaryPackages := BranchBinaryPackages{}
 		if err := json.Unmarshal(body, &branchBinaryPackages); err != nil {
 			return nil, err
 		}
@@ -103,8 +112,8 @@ func printDiffPackages(packages1 []Package, packages2 []Package) {
 
 // выводит список пакетов, version-release которых больше в первом списке, чем во втором списке
 func printGreaterVersions(packages1 []Package, packages2 []Package) {
-	greaterVersions := map[string]string{}
-
+	// greaterVersions := map[Package]bool{}
+	packagesWithGreaterVersions := make([]Package, 0, len(packages1))
 	for _, pkg1 := range packages1 {
 		for _, pkg2 := range packages2 {
 			if pkg1.Name == pkg2.Name {
@@ -112,17 +121,29 @@ func printGreaterVersions(packages1 []Package, packages2 []Package) {
 				v2 := fmt.Sprintf("%s-%s", pkg2.Version, pkg2.Release)
 
 				if compareVersions(v1, v2) == 1 {
-					greaterVersions[pkg1.Name] = v1
+					packagesWithGreaterVersions = append(packagesWithGreaterVersions, pkg1)
 				}
 			}
 		}
 	}
 
-	for name, version := range greaterVersions {
-		fmt.Printf("%s-%s\n", name, version)
+	comparisonVersions := ComparisonVersions{
+		Arch:     packagesWithGreaterVersions[0].Arch,
+		Packages: packagesWithGreaterVersions,
 	}
+
+	jsonEncoded, err := json.MarshalIndent(comparisonVersions, "", " ")
+	if err != nil {
+
+	}
+	fmt.Println(string(jsonEncoded))
+
 }
 
+//	for name, version := range greaterVersions {
+//		fmt.Printf("%s-%s\n", name, version)
+//	}
+//
 // сравнивает версии двух пакетов в формате 'version-release' и возвращает
 //
 //	1, если версия первого пакета больше
@@ -133,18 +154,17 @@ func compareVersions(v1 string, v2 string) int {
 	parts2 := strings.Split(v2, "-")
 
 	// сравниваем версии
-	for i := 0; i < len(parts1)-1 && i < len(parts2)-1; i++ {
-		if parts1[i] > parts2[i] {
-			return 1
-		} else if parts1[i] < parts2[i] {
-			return -1
-		}
+
+	if parts1[0] > parts2[0] {
+		return 1
+	} else if parts1[0] < parts2[0] {
+		return -1
 	}
 
 	// если версии равны, то сравниваем releases
-	if parts1[len(parts1)-1] > parts2[len(parts2)-1] {
+	if parts1[1] > parts2[1] {
 		return 1
-	} else if parts1[len(parts1)-1] < parts2[len(parts2)-1] {
+	} else if parts1[1] < parts2[1] {
 		return -1
 	}
 
@@ -228,55 +248,82 @@ func main() {
 		os.Exit(1)
 	}
 
-	archs := []string{"aarch64", "armh", "i586", "noarch", "ppc64le", "x86_64", "x86_64-i586"}
-
+	// archs := []string{"aarch64", "armh", "i586", "noarch", "ppc64le", "x86_64", "x86_64-i586"}
+	archs := []string{"aarch64", "noarch", "i586", "x86_64", "x86_64-i586"}
 	branch1 := os.Args[1]
 	branch2 := os.Args[2]
 
-	cmd := exec.Command("clear")
-	clearConsoleCommand, _ := cmd.Output()
+	// cmd := exec.Command("clear")
+	// clearConsoleCommand, _ := cmd.Output()
 
-	selectedArchs := chooseArch(archs, clearConsoleCommand)
-	fmt.Println(string(clearConsoleCommand))
-	fmt.Printf("Selected archs <%+v> for branches: <%s>, <%s>\n", selectedArchs, branch1, branch2)
+	// selectedArchs := chooseArch(archs, clearConsoleCommand)
+	// fmt.Println(string(clearConsoleCommand))
+	// fmt.Printf("Selected archs <%+v> for branches: <%s>, <%s>\n", selectedArchs, branch1, branch2)
 
-	showMenu(branch1, branch2)
+	// showMenu(branch1, branch2)
 
 	// branch1 := "p9"
 	// branch2 := "p10"
 
 	// получаем списки пакетов
-	// packageListsFirstArg := map[string][]Package{}
-	// packageListsSecondArg := map[string][]Package{}
-	// for _, arch := range selectedArchs {
-	// 	packages1, err := getPackages(branch1, arch)
-	// 	if err != nil {
-	// 		log.Fatalf("Error getting packages for %s on %s: %s", branch1, arch, err)
-	// 	}
+	packageListsBranch1 := map[string][]Package{}
+	packageListsBranch2 := map[string][]Package{}
 
-	// 	packageListsFirstArg[arch+"_"+branch1] = packages1
+	t := time.Now()
+	var wg sync.WaitGroup
+	var wg2 sync.WaitGroup
+	wg.Add(1)
+	go func() {
 
-	// 	packages2, err := getPackages(branch2, arch)
-	// 	if err != nil {
-	// 		log.Fatalf("Error getting packages for %s on %s: %s", branch2, arch, err)
-	// 	}
+		for _, arch := range archs {
 
-	// 	packageListsSecondArg[arch+"_"+branch2] = packages2
-	// }
+			wg2.Add(1)
+			go func(branch1, arch string) {
+				defer wg2.Done()
+				packages1, err := getPackages(branch1, arch)
+				if err != nil {
+					log.Fatalf("Error getting packages for %s on %s: %s", branch1, arch, err.Error())
+				}
+				// fmt.Println("Dlina: ", len(packages1))
+				packageListsBranch1[arch+"_"+branch1] = packages1
+				fmt.Printf("%s: %v\n", branch1, packages1[0].Arch)
+			}(branch1, arch)
+
+			wg2.Add(1)
+			go func(branch2, arch string) {
+				defer wg2.Done()
+				packages2, err := getPackages(branch2, arch)
+				if err != nil {
+					log.Fatalf("Error getting packages for %s on %s: %s", branch2, arch, err.Error())
+				}
+				packageListsBranch2[arch+"_"+branch2] = packages2
+
+				fmt.Printf("%s: %v\n", branch2, packages2[0].Arch)
+			}(branch2, arch)
+		}
+		wg2.Wait()
+		fmt.Println("Succes")
+		defer wg.Done()
+	}()
+
+	wg.Wait()
+
+	fmt.Println(time.Now().Sub(t).Seconds())
 
 	// //выводим результаты сравнения
 	// for _, arch := range archs {
 
-	// 	fmt.Printf("Packages only present in %s on %s : ", branch1, arch)
-	// 	printDiffPackages(packageListsFirstArg["i586_"+branch1], packageListsSecondArg["i586_"+branch2])
+	fmt.Printf("Packages only present in %s on %s : ", branch1, archs[0])
+	printDiffPackages(packageListsBranch1[archs[0]+"_"+branch1], packageListsBranch2[archs[0]+"_"+branch2])
 	// 	fmt.Println()
 	// }
 
-	// fmt.Println("Packages with greater versions in", branch1, ":")
-	// printGreaterVersions(packageLists["x86_64_"+branch1], packageLists["x86_64_"+branch2])
-	// fmt.Println()
+	fmt.Println("Packages with greater versions in", branch1, ":")
+	printGreaterVersions(packageListsBranch1["x86_64_"+branch1], packageListsBranch2["x86_64_"+branch2])
+	fmt.Println()
 
 	// fmt.Println("All packages in", branch1, ":")
-	// printAllPackages(packageLists["aarch64_"+branch1])
+	// fmt.Printf("HuHHIH: %v", packageListsBranch1["aarch64_p10"][0].Name)
+	// printAllPackages(packageListsBranch1["aarch64_p10"])
 
 }
