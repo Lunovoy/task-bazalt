@@ -20,7 +20,13 @@ type BranchBinaryPackages struct {
 	Packages []Package `json:"packages"`
 }
 
-type ComparisonVersions struct {
+type TotalBranchPackagesResults struct {
+	UniqueInFirst         []BranchPackages `json:"uniqueInFirst"`
+	UniqueInSecond        []BranchPackages `json:"uniqueInSecond"`
+	GreaterPackageVersion []BranchPackages `json:"greaterVersionsInFirst"`
+}
+
+type BranchPackages struct {
 	Arch     string    `json:"arch"`
 	Packages []Package `json:"packages"`
 }
@@ -45,7 +51,7 @@ func getPackages(branch, arch string) ([]Package, error) {
 		return nil, err
 	}
 
-	req.Header.Set("User-Agent", "AltLinux Package Comparison CLI")
+	req.Header.Set("User-Agent", "AltLinux Package BranchPackages CLI")
 
 	client := &http.Client{}
 
@@ -127,12 +133,12 @@ func printGreaterVersions(packages1 []Package, packages2 []Package) {
 		}
 	}
 
-	comparisonVersions := ComparisonVersions{
+	BranchPackagesVersions := BranchPackages{
 		Arch:     packagesWithGreaterVersions[0].Arch,
 		Packages: packagesWithGreaterVersions,
 	}
 
-	jsonEncoded, err := json.MarshalIndent(comparisonVersions, "", " ")
+	jsonEncoded, err := json.MarshalIndent(BranchPackagesVersions, "", " ")
 	if err != nil {
 
 	}
