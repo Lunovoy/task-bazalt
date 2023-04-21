@@ -7,10 +7,12 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/Lunovoy/task-bazalt/pkg/models"
 )
 
 // получает список пакетов для заданной ветки и архитектуры
-func getPackages(branch, arch string) ([]Package, error) {
+func FetchPackages(branch, arch string) ([]models.Package, error) {
 	url := fmt.Sprintf("https://rdb.altlinux.org/api/export/branch_binary_packages/%s?arch=%s", branch, arch)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -44,7 +46,7 @@ func getPackages(branch, arch string) ([]Package, error) {
 			return nil, err
 		}
 
-		branchBinaryPackages := BranchBinaryPackages{}
+		branchBinaryPackages := models.BranchBinaryPackages{}
 		if err := json.Unmarshal(body, &branchBinaryPackages); err != nil {
 			return nil, err
 		}
@@ -60,14 +62,14 @@ func getPackages(branch, arch string) ([]Package, error) {
 }
 
 // выводит список всех пакетов
-func printAllPackages(packages []Package) {
+func printAllPackages(packages []models.Package) {
 	for _, pkg := range packages {
 		fmt.Printf("%s-%s-%s.%s\n", pkg.Name, pkg.Version, pkg.Release, pkg.Arch)
 	}
 }
 
 // выводит список пакетов, которые присутствуют в первом списке, но отсутствуют во втором списке
-func printDiffPackages(packages1 []Package, packages2 []Package) {
+func PrintDiffPackages(packages1 []models.Package, packages2 []models.Package) {
 	diff := map[string]bool{}
 
 	for _, pkg := range packages1 {
@@ -84,9 +86,9 @@ func printDiffPackages(packages1 []Package, packages2 []Package) {
 }
 
 // выводит список пакетов, version-release которых больше в первом списке, чем во втором списке
-func printGreaterVersions(packages1 []Package, packages2 []Package) {
+func PrintGreaterVersions(packages1 []models.Package, packages2 []models.Package) {
 	// greaterVersions := map[Package]bool{}
-	packagesWithGreaterVersions := make([]Package, 0, len(packages1))
+	packagesWithGreaterVersions := make([]models.Package, 0, len(packages1))
 	for _, pkg1 := range packages1 {
 		for _, pkg2 := range packages2 {
 			if pkg1.Name == pkg2.Name {
@@ -100,7 +102,7 @@ func printGreaterVersions(packages1 []Package, packages2 []Package) {
 		}
 	}
 
-	BranchPackagesVersions := BranchPackages{
+	BranchPackagesVersions := models.BranchPackages{
 		Arch:     packagesWithGreaterVersions[0].Arch,
 		Packages: packagesWithGreaterVersions,
 	}

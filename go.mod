@@ -1,3 +1,3 @@
-module github.com/Lunovoy/testProjectBazalt
+module github.com/Lunovoy/task-bazalt
 
 go 1.20
