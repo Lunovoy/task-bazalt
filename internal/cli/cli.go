@@ -31,8 +31,9 @@ func ChooseArch(availableArchs []string, clearConsoleCommand []byte) []string {
 		for i, arch := range availableArchs {
 			fmt.Printf("%v) %s\n", i+2, arch)
 		}
-		fmt.Println("9) Continue")
-		fmt.Println("10) Exit")
+		fmt.Println("------------")
+		fmt.Printf("%v) Continue\n", len(availableArchs)+2)
+		fmt.Printf("%v) Exit\n", len(availableArchs)+3)
 		fmt.Println("============")
 		fmt.Print("Enter number [1-10]: ")
 		fmt.Scan(&choice)
