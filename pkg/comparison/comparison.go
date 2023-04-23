@@ -65,20 +65,26 @@ func FetchPackages(branch, arch string) ([]models.Package, error) {
 func GetDiffPackages(packages1 []models.Package, packages2 []models.Package) models.BranchPackages {
 	t := time.Now()
 	diffPackages := make([]models.Package, 0, len(packages1))
-	diff := map[models.Package]bool{}
+	diff := map[string]bool{}
 
 	for _, pkg := range packages1 {
-		diff[pkg] = true
+		diff[pkg.Name] = true
 	}
 
 	for _, pkg := range packages2 {
-		delete(diff, pkg)
+		delete(diff, pkg.Name)
 	}
 
-	for pkg := range diff {
-		diffPackages = append(diffPackages, pkg)
+	for pkgName := range diff {
+		for _, v := range packages1 {
+			if v.Name == pkgName {
+
+				diffPackages = append(diffPackages, v)
+			}
+		}
 	}
-	fmt.Println("Getting unique packages: ", time.Now().Sub(t).Seconds())
+
+	fmt.Println("Getting unique packages: ", len(diffPackages), time.Now().Sub(t).Seconds())
 	return models.BranchPackages{
 		Arch:     diffPackages[0].Arch,
 		Packages: diffPackages,
