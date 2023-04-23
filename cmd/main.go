@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"sync"
 	"time"
 
+	"github.com/Lunovoy/task-bazalt/internal/cli"
 	"github.com/Lunovoy/task-bazalt/pkg/comparison"
 	"github.com/Lunovoy/task-bazalt/pkg/models"
 )
@@ -36,17 +38,12 @@ func main() {
 	branches := [2]string{os.Args[1], os.Args[2]}
 	arches := []string{"aarch64", "armh", "i586", "noarch", "ppc64le", "x86_64", "x86_64-i586"}
 
-	// cmd := exec.Command("clear")
-	// clearConsoleCommand, _ := cmd.Output()
+	cmd := exec.Command("clear")
+	clearConsoleCommand, _ := cmd.Output()
 
-	// selectedArches := chooseArch(archs, clearConsoleCommand)
-	// fmt.Println(string(clearConsoleCommand))
-	// fmt.Printf("Selected archs <%+v> f	// archs := []string{"aarch64", "noarch", "i586", "x86_64", "x86_64-i586"}or branches: <%s>, <%s>\n", selectedArchs, branch1, branch2)
-
-	// showMenu(branch1, branch2)
-
-	// branch1 := "p9"
-	// branch2 := "p10"
+	selectedArches := cli.ChooseArch(arches, clearConsoleCommand)
+	fmt.Println(string(clearConsoleCommand))
+	fmt.Printf("Selected archs <%+v> for branches: <%s>, <%s>\n", selectedArches, branches[0], branches[1])
 
 	// получаем списки пакетов
 
@@ -60,7 +57,7 @@ func main() {
 	tokens := make(chan struct{}, 8)
 	for i, branch := range branches {
 
-		for _, arch := range arches {
+		for _, arch := range selectedArches {
 			wg.Add(1)
 			go func(branch, arch string, i int) {
 				defer wg.Done()
@@ -92,7 +89,7 @@ func main() {
 	t2 := time.Now()
 	fmt.Println("Processing packages")
 
-	for _, arch := range arches {
+	for _, arch := range selectedArches {
 
 		wg.Add(1)
 		go func(arch string, branches [2]string) {

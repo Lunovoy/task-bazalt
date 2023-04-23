@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func chooseArch(availableArchs []string, clearConsoleCommand []byte) []string {
+func ChooseArch(availableArchs []string, clearConsoleCommand []byte) []string {
 
 	archs := make([]string, 0, len(availableArchs))
 	selectedArchs := map[string]bool{}
@@ -66,12 +66,4 @@ func chooseArch(availableArchs []string, clearConsoleCommand []byte) []string {
 		}
 	}
 	return nil
-}
-
-func showMenu(branch1, branch2 string) {
-
-	fmt.Println("1) Lists of binary packages of 2 branches")
-	fmt.Printf("2) All packages that are in the <%s> but not in the <%s>\n", branch1, branch2)
-	fmt.Printf("3) All packages that are in the <%s> but not in the <%s>\n", branch2, branch1)
-	fmt.Printf("4) All packages whose version-release is greater in the <%s> than in the <%s>\n", branch1, branch2)
 }
