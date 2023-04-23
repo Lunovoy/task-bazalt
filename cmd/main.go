@@ -17,15 +17,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	// archs := []string{"aarch64", "armh", "i586", "noarch", "ppc64le", "x86_64", "x86_64-i586"}
-	archs := []string{"aarch64", "noarch", "i586", "x86_64", "x86_64-i586"}
+	archs := []string{"aarch64", "armh", "i586", "noarch", "ppc64le", "x86_64", "x86_64-i586"}
 
 	// cmd := exec.Command("clear")
 	// clearConsoleCommand, _ := cmd.Output()
 
 	// selectedArchs := chooseArch(archs, clearConsoleCommand)
 	// fmt.Println(string(clearConsoleCommand))
-	// fmt.Printf("Selected archs <%+v> for branches: <%s>, <%s>\n", selectedArchs, branch1, branch2)
+	// fmt.Printf("Selected archs <%+v> f	// archs := []string{"aarch64", "noarch", "i586", "x86_64", "x86_64-i586"}or branches: <%s>, <%s>\n", selectedArchs, branch1, branch2)
 
 	// showMenu(branch1, branch2)
 
@@ -44,7 +43,7 @@ func main() {
 	for i, branch := range branches {
 
 		for _, arch := range archs {
-
+			time.Sleep(300 * time.Millisecond)
 			wg.Add(1)
 			go func(branch, arch string, i int) {
 				defer wg.Done()
