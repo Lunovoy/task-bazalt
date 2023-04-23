@@ -8,10 +8,10 @@ type BranchBinaryPackages struct {
 	Packages []Package `json:"packages"`
 }
 
-type TotalBranchPackagesResults struct {
-	UniqueInFirst         []BranchPackages `json:"uniqueInFirst"`
-	UniqueInSecond        []BranchPackages `json:"uniqueInSecond"`
-	GreaterPackageVersion []BranchPackages `json:"greaterVersionsInFirst"`
+type TotalBranchPackagesResult struct {
+	UniqueInFirst         []BranchPackages `json:"uniqueInFirstBranch"`
+	UniqueInSecond        []BranchPackages `json:"uniqueInSecondBranch"`
+	GreaterPackageVersion []BranchPackages `json:"greaterVersionsInFirstBranch"`
 }
 
 type BranchPackages struct {

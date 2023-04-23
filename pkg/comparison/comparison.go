@@ -61,33 +61,35 @@ func FetchPackages(branch, arch string) ([]models.Package, error) {
 	}
 }
 
-// выводит список всех пакетов
-func printAllPackages(packages []models.Package) {
-	for _, pkg := range packages {
-		fmt.Printf("%s-%s-%s.%s\n", pkg.Name, pkg.Version, pkg.Release, pkg.Arch)
-	}
-}
-
 // выводит список пакетов, которые присутствуют в первом списке, но отсутствуют во втором списке
-func PrintDiffPackages(packages1 []models.Package, packages2 []models.Package) {
-	diff := map[string]bool{}
+func GetDiffPackages(packages1 []models.Package, packages2 []models.Package) models.BranchPackages {
+	t := time.Now()
+	diffPackages := make([]models.Package, 0, len(packages1))
+	diff := map[models.Package]bool{}
 
 	for _, pkg := range packages1 {
-		diff[pkg.Name] = true
+		diff[pkg] = true
 	}
 
 	for _, pkg := range packages2 {
-		delete(diff, pkg.Name)
+		delete(diff, pkg)
 	}
 
-	for name := range diff {
-		fmt.Printf("%s\n", name)
+	for pkg := range diff {
+		diffPackages = append(diffPackages, pkg)
 	}
+	fmt.Println("Getting unique packages: ", time.Now().Sub(t).Seconds())
+	return models.BranchPackages{
+		Arch:     diffPackages[0].Arch,
+		Packages: diffPackages,
+	}
+
 }
 
 // выводит список пакетов, version-release которых больше в первом списке, чем во втором списке
 func GetGreaterPackagesVersions(packages1 []models.Package, packages2 []models.Package) models.BranchPackages {
 	packagesWithGreaterVersions := make([]models.Package, 0, len(packages1))
+	t := time.Now()
 	for _, pkg1 := range packages1 {
 		for _, pkg2 := range packages2 {
 			if pkg1.Name == pkg2.Name {
@@ -100,17 +102,11 @@ func GetGreaterPackagesVersions(packages1 []models.Package, packages2 []models.P
 			}
 		}
 	}
-
+	fmt.Println("Getting greater version: ", time.Now().Sub(t).Seconds())
 	return models.BranchPackages{
 		Arch:     packagesWithGreaterVersions[0].Arch,
 		Packages: packagesWithGreaterVersions,
 	}
-
-	// jsonEncoded, err := json.MarshalIndent(BranchPackagesGreaterVersions, "", " ")
-	// if err != nil {
-
-	// }
-	// fmt.Println(string(jsonEncoded))
 
 }
 
