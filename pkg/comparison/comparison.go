@@ -86,8 +86,7 @@ func PrintDiffPackages(packages1 []models.Package, packages2 []models.Package) {
 }
 
 // выводит список пакетов, version-release которых больше в первом списке, чем во втором списке
-func PrintGreaterVersions(packages1 []models.Package, packages2 []models.Package) {
-	// greaterVersions := map[Package]bool{}
+func GetGreaterPackagesVersions(packages1 []models.Package, packages2 []models.Package) models.BranchPackages {
 	packagesWithGreaterVersions := make([]models.Package, 0, len(packages1))
 	for _, pkg1 := range packages1 {
 		for _, pkg2 := range packages2 {
@@ -102,16 +101,16 @@ func PrintGreaterVersions(packages1 []models.Package, packages2 []models.Package
 		}
 	}
 
-	BranchPackagesVersions := models.BranchPackages{
+	return models.BranchPackages{
 		Arch:     packagesWithGreaterVersions[0].Arch,
 		Packages: packagesWithGreaterVersions,
 	}
 
-	jsonEncoded, err := json.MarshalIndent(BranchPackagesVersions, "", " ")
-	if err != nil {
+	// jsonEncoded, err := json.MarshalIndent(BranchPackagesGreaterVersions, "", " ")
+	// if err != nil {
 
-	}
-	fmt.Println(string(jsonEncoded))
+	// }
+	// fmt.Println(string(jsonEncoded))
 
 }
 

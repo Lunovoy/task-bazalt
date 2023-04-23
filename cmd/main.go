@@ -19,8 +19,6 @@ func main() {
 
 	// archs := []string{"aarch64", "armh", "i586", "noarch", "ppc64le", "x86_64", "x86_64-i586"}
 	archs := []string{"aarch64", "noarch", "i586", "x86_64", "x86_64-i586"}
-	branch1 := os.Args[1]
-	branch2 := os.Args[2]
 
 	// cmd := exec.Command("clear")
 	// clearConsoleCommand, _ := cmd.Output()
@@ -41,54 +39,44 @@ func main() {
 	packageListsBranch2 := map[string][]models.Package{}
 
 	var wg sync.WaitGroup
+	branches := [2]string{os.Args[1], os.Args[2]}
 
-	wg.Add(1)
-	go func() {
-		var wg2 sync.WaitGroup
+	for i, branch := range branches {
+
 		for _, arch := range archs {
 
-			wg2.Add(1)
-			go func(branch1, arch string) {
-				defer wg2.Done()
-				packages1, err := comparison.FetchPackages(branch1, arch)
+			wg.Add(1)
+			go func(branch, arch string, i int) {
+				defer wg.Done()
+				packages, err := comparison.FetchPackages(branch, arch)
 				if err != nil {
-					log.Fatalf("Error getting packages for %s on %s: %s", branch1, arch, err.Error())
+					log.Fatalf("Error getting packages for %s on %s: %s", branch, arch, err.Error())
 				}
-				// fmt.Println("Dlina: ", len(packages1))
-				packageListsBranch1[arch+"_"+branch1] = packages1
-				fmt.Printf("%s: %v\n", branch1, packages1[0].Arch)
-			}(branch1, arch)
-
-			wg2.Add(1)
-			go func(branch2, arch string) {
-				defer wg2.Done()
-				packages2, err := comparison.FetchPackages(branch2, arch)
-				if err != nil {
-					log.Fatalf("Error getting packages for %s on %s: %s", branch2, arch, err.Error())
+				if i == 0 {
+					packageListsBranch1[arch+"_"+branch] = packages
+				} else {
+					packageListsBranch2[arch+"_"+branch] = packages
 				}
-				packageListsBranch2[arch+"_"+branch2] = packages2
+				fmt.Printf("%s: %v\n", branch, packages[0].Arch)
+			}(branch, arch, i)
 
-				fmt.Printf("%s: %v\n", branch2, packages2[0].Arch)
-			}(branch2, arch)
 		}
-		wg2.Wait()
-		fmt.Println("Succes")
-		defer wg.Done()
-	}()
+	}
 	wg.Wait()
+	fmt.Println("Success")
 
 	fmt.Println(time.Now().Sub(t).Seconds())
 
 	// //выводим результаты сравнения
 	// for _, arch := range archs {
 
-	fmt.Printf("Packages only present in %s on %s : ", branch1, archs[0])
-	comparison.PrintDiffPackages(packageListsBranch1[archs[0]+"_"+branch1], packageListsBranch2[archs[0]+"_"+branch2])
-	// 	fmt.Println()
-	// }
+	// fmt.Printf("Packages only present in %s on %s : ", branch1, archs[0])
+	// comparison.PrintDiffPackages(packageListsBranch1[archs[0]+"_"+branch1], packageListsBranch2[archs[0]+"_"+branch2])
+	// // 	fmt.Println()
+	// // }
 
-	fmt.Println("Packages with greater versions in", branch1, ":")
-	comparison.PrintGreaterVersions(packageListsBranch1["x86_64_"+branch1], packageListsBranch2["x86_64_"+branch2])
+	// fmt.Println("Packages with greater versions in", branch1, ":")
+	comparison.GetGreaterPackagesVersions(packageListsBranch1["x86_64_"+branches[0]], packageListsBranch2["x86_64_"+branches[1]])
 	fmt.Println()
 
 	// fmt.Println("All packages in", branch1, ":")
