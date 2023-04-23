@@ -14,9 +14,10 @@
     ```
 3. Run
     >Usage:
-    >comparison "branch1" "branch2"
+    
+    > ./comparison "branch1" "branch2"
 
     Example:
     ```
-    comparison p10 p9
+    ./comparison p10 p9
     ```
