@@ -12,6 +12,21 @@ import (
 	"github.com/Lunovoy/task-bazalt/pkg/models"
 )
 
+func CreateFile(filename, data string) {
+	file, err := os.Create(filename)
+	if err != nil {
+		log.Printf("error occured while creating file: %s", err.Error())
+		return
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(fmt.Sprintln(data))
+	if err != nil {
+		log.Printf("error occured while writing to file: %s", err.Error())
+		return
+	}
+}
+
 func main() {
 	if len(os.Args) != 3 {
 		fmt.Printf("Usage: %s <branch1> <branch2>\n", os.Args[0])
@@ -24,7 +39,7 @@ func main() {
 	// cmd := exec.Command("clear")
 	// clearConsoleCommand, _ := cmd.Output()
 
-	// selectedArchs := chooseArch(archs, clearConsoleCommand)
+	// selectedArches := chooseArch(archs, clearConsoleCommand)
 	// fmt.Println(string(clearConsoleCommand))
 	// fmt.Printf("Selected archs <%+v> f	// archs := []string{"aarch64", "noarch", "i586", "x86_64", "x86_64-i586"}or branches: <%s>, <%s>\n", selectedArchs, branch1, branch2)
 
@@ -42,7 +57,7 @@ func main() {
 	var wg sync.WaitGroup
 	fmt.Println("Fetching packages from server")
 
-	tokens := make(chan struct{}, 10)
+	tokens := make(chan struct{}, 8)
 	for i, branch := range branches {
 
 		for _, arch := range arches {
@@ -119,6 +134,10 @@ func main() {
 	}
 	fmt.Println("Json Encoded")
 
-	fmt.Println(len(jsonEncoded))
+	filename := "out.txt"
+
+	CreateFile(filename, string(jsonEncoded))
+
+	fmt.Println("Json written in ", filename)
 
 }
